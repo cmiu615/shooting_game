@@ -92,10 +92,10 @@
             context = canvas.getContext("2d");
 
             //自機の生成
-            player = new GameObject("player.png", 2);
+            player = new GameObject("player.png", 2.2);
             //敵、爆発の生成（生成数：６）
             for (var i = 0; i < 6; i++) {
-                enemies1[i] = new GameObject("enemy1.png", 1);//速さ1
+                enemies1[i] = new GameObject("enemy1.png", 1.2);//速さ1.2
             }
             for (var i = 0; i < 6; i++) {
                 enemies2[i] = new GameObject("enemy2.png", 2);//速さ2
