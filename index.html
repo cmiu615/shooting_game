@@ -76,8 +76,8 @@
             context = canvas.getContext("2d");
             if (isSmartphone) {
                 // キャンバスサイズを画面サイズに合わせる
-                canvas.width = window.innerWidth * 0.9;
-                canvas.height = window.innerHeight * 0.9;
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
             }
             if (isPC) {
                 // PCの場合は縦横比 4:3 に調整
