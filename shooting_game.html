@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>シューティングゲーム</title>
+    <script>
+        var canvas, context;//キャンバス
+        var timer;//タイマー
+        var score;//スコア
+        var highscore = 0;//ハイスコア
+        var player;//自機
+        var playerDir = 0;//自機の移動方向
+        var enemies1 = new Array();//敵1
+        var enemies2 = new Array();//敵2
+        var bullets = new Array();//弾
+        var explosions = new Array();//爆発
+
+        //ゲームオブジェクトクラス
+        function GameObject(imageFile, defaultSpeed) {
+            this.image = new Image();//画像
+            this.image.src = imageFile;//画像をセット
+            this.x = 0;//位置
+            this.y = 0;
+            this.speed = defaultSpeed;//速さ
+            this.status = "ready";//ステータス（ready/dead/alive）
+            this.lifetime = 10;//爆発が消えるまでの時間（更新数）
+        }
+
+        //ゲームオブジェクトの初期化メソッド
+        GameObject.prototype.init = function (x, y, status) {
+            this.x = x;
+            this.y = y;
+            this.status = status;
+            this.lifetime = 10;
+        }
+
+        //ゲームオブジェクトの移動メソッド
+        GameObject.prototype.move = function (dx, dy) {
+            this.x += dx * this.speed;
+            this.y += dy * this.speed;
+        }
+
+        //ゲームオブジェクトの描画メソッド
+        GameObject.prototype.draw = function () {
+            context.drawImage(this.image, this.x, this.y, 100, 100);
+        }
+        // ユーザーエージェントを取得
+        var userAgent = navigator.userAgent.toLowerCase();
+
+        // スマホかどうかを判定
+        var isSmartphone = /iphone|ipod|ipad|android/.test(userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        // PCかどうかを判定
+        var isPC = !isSmartphone;
+
+        function init() {
+            // キャンバスの取得
+            canvas = document.getElementById("game");
+            context = canvas.getContext("2d");
+            if (isSmartphone) {
+                // キャンバスサイズを画面サイズに合わせる
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            // ハイスコアの取得
+            highScore = localStorage.getItem("highScore") || 0;
+            //キャンバスの取得
+            canvas = document.getElementById("game");
+            context = canvas.getContext("2d");
+
+            //自機の生成
+            player = new GameObject("player.png", 2);
+            //敵、爆発の生成（生成数：６）
+            for (var i = 0; i < 6; i++) {
+                enemies1[i] = new GameObject("enemy1.png", 1);//速さ1
+            }
+            for (var i = 0; i < 3; i++) {
+                enemies2[i] = new GameObject("enemy2.png", 2);//速さ2
+            }
+            for (var i = 0; i < 6; i++) {
+                explosions[i] = new GameObject("explosion.png", 0);//速さ0
+            }
+            //弾の生成（生成数：３）
+            for (var i = 0; i < 3; i++) {
+                bullets[i] = new GameObject("bullet.png", 2);//速さ2
+            }
+        }
+
+        function startGame() {
+            //スコアの初期化
+            score = 0;
+            //自機の初期化
+            player.init(150, 680, "alive");//位置・status
+            //敵、爆発の初期化
+            for (var i = 0; i < enemies1.length; i++) {
+                enemies1[i].init(Math.random() * 300, -40 * i, "alive");
+            }
+            for (var i = 0; i < enemies2.length; i++) {
+                enemies2[i].init(Math.random() * 300, -100 * i, "alive");
+            }
+            // 爆発と弾の初期化
+            for (var i = 0; i < explosions.length; i++) {
+                explosions[i].init(0, 0, "dead");
+            }
+            //弾の初期化
+            for (var i = 0; i < bullets.length; i++) {
+                bullets[i].init(0, 0, "dead");
+            }
+            //ゲームスタート
+            timer = setInterval(main, 10);
+        }
+
+        function main() {
+            //キャンバスのクリア
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            //自機の移動（画面幅を超える移動はキャンセル）、描画
+            player.move(playerDir, 0);
+            if ((player.x < 0) || (player.x > 480)) player.move(playerDir * (-1), 0);
+            player.draw();
+
+            //弾の移動（画面から消えるとdead）、描画
+            for (var i = 0; i < bullets.length; i++) {
+                if (bullets[i].status == "alive") {
+                    bullets[i].move(0, -1);
+                    if (bullets[i].y < 0) bullets[i].status = "dead";
+                    bullets[i].draw();
+                }
+            }
+
+            //敵の移動、あたり判定、描画
+            for (var i = 0; i < enemies1.length; i++) {
+                //移動（画面から消えるとdead）
+                enemies1[i].move(Math.sin(enemies1[i].y * (Math.PI / 180)), 1);
+                if (enemies1[i].y > 800) enemies1[i].status = "dead";
+                //自機と衝突
+                if (checkCollision(enemies1[i], player)) {
+                    player.status = "dead";
+                    explosions[i].init(player.x, player.y, "alive");//自機の位置に爆発をセット
+                    se("explosion");//音
+                }
+                //弾と衝突
+                for (var j = 0; j < bullets.length; j++) {
+                    if (checkCollision(enemies1[i], bullets[j])) {
+                        score += 100;
+                        enemies1[i].status = "dead";
+                        bullets[j].status = "dead";
+                        explosions[i].init(enemies1[i].x, enemies1[i].y, "alive");
+                        se("explosion");
+                    }
+                }
+
+                //描画または画面上から復活
+                if (enemies1[i].status == "alive") {
+                    enemies1[i].draw();
+                } else {
+                    enemies1[i].init(Math.random() * 420, 0, "alive");
+                }
+            }
+            // enemies2の移動、あたり判定、描画
+            for (var i = 0; i < enemies2.length; i++) {
+                // 移動（画面から消えるとdead）
+                enemies2[i].move(Math.sin(enemies2[i].y * (Math.PI / 180)), 2);
+                if (enemies2[i].y > 800) enemies2[i].status = "dead";
+
+                // 自機と衝突
+                if (checkCollision(enemies2[i], player)) {
+                    player.status = "dead";
+                    explosions[i].init(player.x, player.y, "alive");
+                    se("explosion");
+                }
+
+                // 弾と衝突
+                for (var j = 0; j < bullets.length; j++) {
+                    if (checkCollision(enemies2[i], bullets[j])) {
+                        score += 300; // 高得点
+                        enemies2[i].status = "dead";
+                        bullets[j].status = "dead";
+                        explosions[i].init(enemies2[i].x, enemies2[i].y, "alive");
+                        se("explosion");
+                    }
+                }
+
+                // 描画または画面上から復活
+                if (enemies2[i].status == "alive") {
+                    enemies2[i].draw();
+                } else {
+                    enemies2[i].init(Math.random() * 420, 0, "alive");
+                }
+            }
+
+
+
+            //爆発の描画
+            for (var i = 0; i < explosions.length; i++) {
+                if (explosions[i].status == "alive") {
+                    explosions[i].draw();
+                    explosions[i].lifetime--;
+                    if (explosions[i].lifetime < 0) explosions[i].status = "dead";
+                }
+            }
+
+            //スコアを描画
+            context.font = "20px 'arial'";
+            context.fillStyle = "white";
+            context.textBaseline = "top";
+            context.textAlign = "left";
+            context.fillText("SCORE:" + ("000000" + score).slice(-6), 0, 0);
+            // ハイスコアを描画
+            context.fillText("HIGH SCORE: " + ("000000" + highScore).slice(-6), 0, 30);
+
+            //GAME OVER
+            if (player.status == "dead") {
+                // ハイスコアの更新
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("highScore", highScore); // 保存
+                }
+                //Game Overを描画
+                context.font = "80px 'arial black'";
+                context.fillStyle = "red";
+                context.textBaseline = "middle";
+                context.textAlign = "center";
+                context.fillText("GAME OVER", 320, 480);
+
+                //ゲーム終了、プレイヤーの状態をreadyへ
+                clearInterval(timer);
+                player.status = "ready";
+            }
+        }
+        function checkCollision(obj1, obj2) {
+            var d = Math.sqrt(Math.pow((obj1.x - obj2.x), 2) + Math.pow((obj1.y - obj2.y), 2));
+            if ((obj1.status == "alive") && (obj2.status == "alive") && (d < 32)) {
+                return true;//衝突
+            } else {
+                return false;
+            }
+        }
+
+        document.onkeydown = function (e) {
+            //ゲームスタート（Aキー）
+            if ((e.key == "a") && (player.status == "ready")) startGame();
+
+            //移動（方向キー左：左へ移動、方向キー右：右へ移動）
+            if ((e.key == "ArrowLeft") || (e.key == "Left")) playerDir = -1;
+            if ((e.key == "ArrowRight") || (e.key == "Right")) playerDir = 1;
+
+            //弾発射（スペースキー）
+            if (((e.key == " ") || (e.key == "Spacebar")) && (player.status == "alive")) {
+                for (var i = 0; i < bullets.length; i++) {
+                    if (bullets[i].status == "dead") {
+                        bullets[i].init(player.x, player.y - 16, "alive");
+                        se("shoot");
+                        break;
+                    }
+                }
+            }
+        }
+
+        document.onkeyup = function (e) {
+            //方向キー（左/右）が放されたときは移動しない
+            if ((e.key == "ArrowLeft") || (e.key == "Left") ||
+                (e.key == "ArrowRight") || (e.key == "Right")) playerDir = 0;
+        }
+
+        function se(sound) {
+            //効果音再生
+            document.getElementById(sound).currentTime = 0;
+            document.getElementById(sound).play();
+        }
+        if (isSmartphone) {
+            document.addEventListener("touchstart", function (e) {
+                if (player.status === "ready") startGame(); // ゲーム開始
+
+                const touchX = e.touches[0].clientX; // タッチ位置
+                const touchY = e.touches[0].clientY;
+
+                if (touchY > canvas.height * 0.8) { // 画面下部をタッチ
+                    if (touchX < canvas.width * 0.33) {
+                        playerDir = -1; // 左移動
+                    } else if (touchX > canvas.width * 0.66) {
+                        playerDir = 1; // 右移動
+                    } else {
+                        for (var i = 0; i < bullets.length; i++) { // 弾発射
+                            if (bullets[i].status === "dead") {
+                                bullets[i].init(player.x, player.y - 16, "alive");
+                                se("shoot");
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // タッチを離したら停止
+            document.addEventListener("touchend", function () {
+                playerDir = 0;
+            });
+        }
+    </script>
+</head>
+
+<body onload="init()">
+    [a]:ゲーム開始 [←]:左へ移動 [→]：右へ移動 [space]:発射
+    <hr>
+    <canvas id="game" width="600" height="800" style="background-color:black;"></canvas>
+    <audio id="shoot">
+        <source src="shoot.mp3">
+    </audio>
+    <audio id="explosion">
+        <source src="explosion.mp3">
+    </audio>
+</body>
+
+</html>
