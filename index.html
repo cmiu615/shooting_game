@@ -33,6 +33,9 @@
             this.y = y;
             this.status = status;
             this.lifetime = 10;
+            // 敵のサイズ調整 (ウィンドウサイズに基づいてサイズを変更)
+            this.width = canvas.width * 0.1;  // ウィンドウサイズに基づいた比率で変更
+            this.height = canvas.width * 0.1;
         }
 
         //ゲームオブジェクトの移動メソッド
@@ -43,11 +46,23 @@
 
         //ゲームオブジェクトの描画メソッド
         GameObject.prototype.draw = function () {
-            context.drawImage(this.image, this.x, this.y, 100, 100);
+            context.drawImage(this.image, this.x, this.y, this.width, this.height);
         }
         // ユーザーエージェントを取得
         var userAgent = navigator.userAgent.toLowerCase();
+        function resizeCanvas() {
+            const aspectRatio = 3 / 4;
+            let canvasHeight = window.innerHeight;
+            let canvasWidth = canvasHeight * aspectRatio;
 
+            if (canvasWidth > window.innerWidth) {
+                canvasWidth = window.innerWidth;
+                canvasHeight = canvasWidth / aspectRatio;
+            }
+
+            canvas.width = canvasWidth * 0.9;
+            canvas.height = canvasHeight * 0.9;
+        }
         // スマホかどうかを判定
         var isSmartphone = /iphone|ipod|ipad|android/.test(userAgent) ||
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -61,8 +76,14 @@
             context = canvas.getContext("2d");
             if (isSmartphone) {
                 // キャンバスサイズを画面サイズに合わせる
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                canvas.width = window.innerWidth * 0.9;
+                canvas.height = window.innerHeight * 0.9;
+            }
+            if (isPC) {
+                // PCの場合は縦横比 4:3 に調整
+                resizeCanvas();
+                // ウィンドウサイズ変更時に再計算
+                window.addEventListener("resize", resizeCanvas);
             }
             // ハイスコアの取得
             highScore = localStorage.getItem("highScore") || 0;
@@ -76,7 +97,7 @@
             for (var i = 0; i < 6; i++) {
                 enemies1[i] = new GameObject("enemy1.png", 1);//速さ1
             }
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 6; i++) {
                 enemies2[i] = new GameObject("enemy2.png", 2);//速さ2
             }
             for (var i = 0; i < 6; i++) {
@@ -92,13 +113,13 @@
             //スコアの初期化
             score = 0;
             //自機の初期化
-            player.init(150, 680, "alive");//位置・status
-            //敵、爆発の初期化
+            player.init(canvas.width * 0.5, canvas.height * 0.85, "alive");//位置・status
+            //敵の初期化
             for (var i = 0; i < enemies1.length; i++) {
-                enemies1[i].init(Math.random() * 300, -40 * i, "alive");
+                enemies1[i].init(Math.random() * canvas.width * 0.8, -canvas.height * 0.1 * i, "alive");
             }
             for (var i = 0; i < enemies2.length; i++) {
-                enemies2[i].init(Math.random() * 300, -100 * i, "alive");
+                enemies2[i].init(Math.random() * canvas.width * 0.8, -canvas.height * 0.15 * i, "alive");
             }
             // 爆発と弾の初期化
             for (var i = 0; i < explosions.length; i++) {
@@ -115,10 +136,13 @@
         function main() {
             //キャンバスのクリア
             context.clearRect(0, 0, canvas.width, canvas.height);
+            // 自機の移動制限を画面サイズに合わせて調整
+            if (player.x < 0) player.x = 0;
+            if (player.x > canvas.width - 100) player.x = canvas.width - 100;
 
             //自機の移動（画面幅を超える移動はキャンセル）、描画
             player.move(playerDir, 0);
-            if ((player.x < 0) || (player.x > 480)) player.move(playerDir * (-1), 0);
+            if ((player.x < 0) || (player.x > canvas.width - 100)) player.move(playerDir * (-1), 0);
             player.draw();
 
             //弾の移動（画面から消えるとdead）、描画
@@ -134,7 +158,8 @@
             for (var i = 0; i < enemies1.length; i++) {
                 //移動（画面から消えるとdead）
                 enemies1[i].move(Math.sin(enemies1[i].y * (Math.PI / 180)), 1);
-                if (enemies1[i].y > 800) enemies1[i].status = "dead";
+                if (enemies1[i].y > canvas.height) enemies1[i].status = "dead";
+                enemies1[i].draw();
                 //自機と衝突
                 if (checkCollision(enemies1[i], player)) {
                     player.status = "dead";
@@ -156,14 +181,15 @@
                 if (enemies1[i].status == "alive") {
                     enemies1[i].draw();
                 } else {
-                    enemies1[i].init(Math.random() * 420, 0, "alive");
+                    enemies1[i].init(Math.random() * canvas.width * 0.8, 0, "alive");
                 }
             }
             // enemies2の移動、あたり判定、描画
             for (var i = 0; i < enemies2.length; i++) {
                 // 移動（画面から消えるとdead）
                 enemies2[i].move(Math.sin(enemies2[i].y * (Math.PI / 180)), 2);
-                if (enemies2[i].y > 800) enemies2[i].status = "dead";
+                if (enemies2[i].y > canvas.height) enemies2[i].status = "dead";
+                enemies2[i].draw();
 
                 // 自機と衝突
                 if (checkCollision(enemies2[i], player)) {
@@ -182,12 +208,11 @@
                         se("explosion");
                     }
                 }
-
-                // 描画または画面上から復活
+                //描画または画面上から復活
                 if (enemies2[i].status == "alive") {
                     enemies2[i].draw();
                 } else {
-                    enemies2[i].init(Math.random() * 420, 0, "alive");
+                    enemies2[i].init(Math.random() * canvas.width * 0.8, 0, "alive");
                 }
             }
 
@@ -207,9 +232,9 @@
             context.fillStyle = "white";
             context.textBaseline = "top";
             context.textAlign = "left";
-            context.fillText("SCORE:" + ("000000" + score).slice(-6), 0, 0);
+            context.fillText("SCORE:" + ("000000" + score).slice(-6), canvas.width * 0.05, canvas.height * 0.05);
             // ハイスコアを描画
-            context.fillText("HIGH SCORE: " + ("000000" + highScore).slice(-6), 0, 30);
+            context.fillText("HIGH SCORE: " + ("000000" + highScore).slice(-6), canvas.width * 0.05, canvas.height * 0.05 + 30);
 
             //GAME OVER
             if (player.status == "dead") {
@@ -219,11 +244,11 @@
                     localStorage.setItem("highScore", highScore); // 保存
                 }
                 //Game Overを描画
-                context.font = "80px 'arial black'";
+                context.font = "50px 'arial black'";
                 context.fillStyle = "red";
                 context.textBaseline = "middle";
                 context.textAlign = "center";
-                context.fillText("GAME OVER", 320, 480);
+                context.fillText("GAME OVER", canvas.width * 0.5, canvas.height*0.5);
 
                 //ゲーム終了、プレイヤーの状態をreadyへ
                 clearInterval(timer);
@@ -303,8 +328,6 @@
 </head>
 
 <body onload="init()">
-    [a]:ゲーム開始 [←]:左へ移動 [→]：右へ移動 [space]:発射
-    <hr>
     <canvas id="game" width="600" height="800" style="background-color:black;"></canvas>
     <audio id="shoot">
         <source src="shoot.mp3">
@@ -313,5 +336,11 @@
         <source src="explosion.mp3">
     </audio>
 </body>
+<style>
+    body {
+        -webkit-user-select: none;
+        /*テキスト長押しの選択ボックスを無効化*/
+    }
+</style>
 
 </html>
