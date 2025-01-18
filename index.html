@@ -299,35 +299,52 @@
         }
 
         if (isSmartphone) {
+            let touchStartTime = 0; // タッチ開始時間を保存
+            let isTouching = false;  // 長押し判定フラグ
+
             document.addEventListener("touchstart", function (e) {
-                if (player.status === "ready") startGame(); // ゲーム開始
+                const touchX = e.touches[0].clientX; // タッチ位置X
+                const touchY = e.touches[0].clientY; // タッチ位置Y
 
-                const touchY = e.touches[0].clientY;
+                // ゲーム開始
+                if (player.status === "ready") startGame();
 
-                // 画面の下部エリアを判定
-                const thresholdY = canvas.height * 0.75; // 画面の下25%をタップ可能エリアとする
+                // 画面下部をタッチした場合
+                if (touchY > canvas.height * 0.75) {
+                    touchStartTime = Date.now(); // タッチ開始時刻を記録
 
-                if (touchY >= thresholdY) {
+                    // 画面下部をタッチした時に弾を発射
                     for (let i = 0; i < bullets.length; i++) {
                         if (bullets[i].status === "dead") {
-                            bullets[i].init(player.x + player.width / 2, player.y - 16, "alive"); // 自機中央から発射
+                            bullets[i].init(player.x + player.width / 2, player.y - 16, "alive"); // 中央から発射
                             se("shoot"); // 発射音
                             break;
                         }
                     }
-                } 
-                if (touchY > canvas.height * 0.75) { // 画面下部をタッチ
+
+                    // 長押し判定フラグをオンにする
+                    isTouching = true;
+                }
+            });
+
+            document.addEventListener("touchmove", function (e) {
+                if (isTouching) {
+                    const touchX = e.touches[0].clientX; // タッチ位置X
+
+                    // 左右移動
                     if (touchX < canvas.width * 0.33) {
                         playerDir = -1; // 左移動
                     } else if (touchX > canvas.width * 0.66) {
                         playerDir = 1; // 右移動
+                    } else {
+                        playerDir = 0; // 停止
                     }
                 }
             });
 
-            // タッチを離したら停止
             document.addEventListener("touchend", function () {
-                playerDir = 0;
+                isTouching = false; // タッチ終了時に移動停止
+                playerDir = 0; // 停止
             });
         }
 
