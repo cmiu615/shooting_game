@@ -92,10 +92,10 @@
             context = canvas.getContext("2d");
 
             //自機の生成
-            player = new GameObject("player.png", 2);
-            //敵、爆発の生成（生成数：６）
+            player = new GameObject("player.png", 2.2);
+            //敵、爆発の生成（生成数：6）
             for (var i = 0; i < 6; i++) {
-                enemies1[i] = new GameObject("enemy1.png", 1.2);//速さ1
+                enemies1[i] = new GameObject("enemy1.png", 1.2);//速さ1.2
             }
             for (var i = 0; i < 6; i++) {
                 enemies2[i] = new GameObject("enemy2.png", 2);//速さ2
@@ -103,8 +103,8 @@
             for (var i = 0; i < 6; i++) {
                 explosions[i] = new GameObject("explosion.png", 0);//速さ0
             }
-            //弾の生成（生成数：３）
-            for (var i = 0; i < 3; i++) {
+            //弾の生成（生成数：6）
+            for (var i = 0; i < 6; i++) {
                 bullets[i] = new GameObject("bullet.png", 2);//速さ2
             }
         }
@@ -297,59 +297,25 @@
             document.getElementById(sound).currentTime = 0;
             document.getElementById(sound).play();
         }
-        // if (isSmartphone) {
-        //     document.addEventListener("touchstart", function (e) {
-        //         if (player.status === "ready") startGame(); // ゲーム開始
 
-        //         const touchX = e.touches[0].clientX; // タッチ位置
-        //         const touchY = e.touches[0].clientY;
-
-        //         if (touchY > canvas.height * 0.8) { // 画面下部をタッチ
-        //             if (touchX < canvas.width * 0.33) {
-        //                 playerDir = -1; // 左移動
-        //             } else if (touchX > canvas.width * 0.66) {
-        //                 playerDir = 1; // 右移動
-        //             } else {
-        //                 for (var i = 0; i < bullets.length; i++) { // 弾発射
-        //                     if (bullets[i].status === "dead") {
-        //                         bullets[i].init(player.x, player.y - 16, "alive");
-        //                         se("shoot");
-        //                         break;
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     });
-
-        //     // タッチを離したら停止
-        //     document.addEventListener("touchend", function () {
-        //         playerDir = 0;
-        //     });
-        // }
         if (isSmartphone) {
             document.addEventListener("touchstart", function (e) {
                 if (player.status === "ready") startGame(); // ゲーム開始
 
-                const touchX = e.touches[0].clientX; // タッチ位置
                 const touchY = e.touches[0].clientY;
 
-                // 自機の範囲を計算
-                const playerLeft = player.x;
-                const playerRight = player.x + player.width;
-                const playerTop = player.y;
-                const playerBottom = player.y + player.height;
+                // 画面の下部エリアを判定
+                const thresholdY = canvas.height * 0.75; // 画面の下25%をタップ可能エリアとする
 
-                // 自機をタッチした場合に弾を発射
-                if (touchX >= playerLeft && touchX <= playerRight &&
-                    touchY >= playerTop && touchY <= playerBottom) {
+                if (touchY >= thresholdY) {
                     for (let i = 0; i < bullets.length; i++) {
                         if (bullets[i].status === "dead") {
-                            bullets[i].init(player.x + player.width / 2, player.y - 16, "alive"); // 中央から発射
+                            bullets[i].init(player.x + player.width / 2, player.y - 16, "alive"); // 自機中央から発射
                             se("shoot"); // 発射音
                             break;
                         }
                     }
-                } else if (touchY > canvas.height * 0.8) { // 画面下部をタッチ
+                } else if (touchY > canvas.height * 0.75) { // 画面下部をタッチ
                     if (touchX < canvas.width * 0.33) {
                         playerDir = -1; // 左移動
                     } else if (touchX > canvas.width * 0.66) {
