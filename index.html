@@ -316,14 +316,6 @@
                         playerDir = -1; // 左移動
                     } else if (touchX > canvas.width * 0.66) {
                         playerDir = 1; // 右移動
-                    } else {
-                        for (var i = 0; i < bullets.length; i++) { // 弾発射
-                            if (bullets[i].status === "dead") {
-                                bullets[i].init(player.x, player.y - 16, "alive");
-                                se("shoot");
-                                break;
-                            }
-                        }
                     }
                 }
                 // 自機をタッチした場合に弾を発射
