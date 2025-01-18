@@ -312,9 +312,9 @@
                 const playerBottom = player.y + player.height;
 
                 if (touchY > canvas.height * 0.75) { // 画面下部をタッチ
-                    if (touchX < canvas.width * 0.33) {
+                    if (touchX < canvas.width * 0.45) {
                         playerDir = -1; // 左移動
-                    } else if (touchX > canvas.width * 0.66) {
+                    } else if (touchX > canvas.width * 0.55) {
                         playerDir = 1; // 右移動
                     }
                 }
