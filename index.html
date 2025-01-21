@@ -96,17 +96,17 @@
             player = new GameObject("player.png", 2.2);
             //敵、爆発の生成（生成数：6）
             for (var i = 0; i < 6; i++) {
-                enemies1[i] = new GameObject("enemy1.png", 1.2);//速さ1.2
+                enemies1[i] = new GameObject("enemy1.png", 1.0);//速さ1.0
             }
             for (var i = 0; i < 6; i++) {
-                enemies2[i] = new GameObject("enemy2.png", 2);//速さ2
+                enemies2[i] = new GameObject("enemy2.png", 1.5);//速さ1.5
             }
             for (var i = 0; i < 6; i++) {
                 explosions[i] = new GameObject("explosion.png", 0);//速さ0
             }
-            //わさびの生成（生成数：6）
-            for (var i = 0; i < 6; i++) {
-                wasabi[i] = new GameObject("wasabi.png", 1.2);//速さ1.2
+            //わさびの生成（生成数：3）
+            for (var i = 0; i < 3; i++) {
+                wasabi[i] = new GameObject("wasabi.png", 1.0);//速さ1.9
             }
             //弾の生成（生成数：6）
             for (var i = 0; i < 6; i++) {
