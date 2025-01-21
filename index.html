@@ -13,6 +13,7 @@
         var playerDir = 0;//自機の移動方向
         var enemies1 = new Array();//敵1
         var enemies2 = new Array();//敵2
+        var wasabi = new Array();//わさび
         var bullets = new Array();//弾
         var explosions = new Array();//爆発
 
@@ -103,6 +104,10 @@
             for (var i = 0; i < 6; i++) {
                 explosions[i] = new GameObject("explosion.png", 0);//速さ0
             }
+            //わさびの生成（生成数：6）
+            for (var i = 0; i < 6; i++) {
+                wasabi[i] = new GameObject("wasabi.png", 1.2);//速さ1.2
+            }
             //弾の生成（生成数：6）
             for (var i = 0; i < 6; i++) {
                 bullets[i] = new GameObject("bullet.png", 2);//速さ2
@@ -116,10 +121,14 @@
             player.init(canvas.width * 0.5, canvas.height * 0.85, "alive");//位置・status
             //敵の初期化
             for (var i = 0; i < enemies1.length; i++) {
-                enemies1[i].init(Math.random() * canvas.width * 0.8, -canvas.height * 0.1 * i, "alive");
+                enemies1[i].init(Math.random() * canvas.width * 0.8, -canvas.height * 0.15 * i, "alive");
             }
             for (var i = 0; i < enemies2.length; i++) {
                 enemies2[i].init(Math.random() * canvas.width * 0.8, -canvas.height * 0.15 * i, "alive");
+            }
+            //わさびの初期化
+            for (var i = 0; i < wasabi.length; i++) {
+                wasabi[i].init(Math.random() * canvas.width * 0.8, -canvas.height * 0.15 * i, "alive");
             }
             // 爆発と弾の初期化
             for (var i = 0; i < explosions.length; i++) {
@@ -213,6 +222,31 @@
                     enemies2[i].draw();
                 } else {
                     enemies2[i].init(Math.random() * canvas.width * 0.8, 0, "alive");
+                }
+            }
+
+            //わさびの移動、あたり判定、描画
+            for (var i = 0; i < wasabi.length; i++) {
+                //移動（画面から消えるとdead）
+                wasabi[i].move(Math.sin(wasabi[i].y * (Math.PI / 180)), 1);
+                if (wasabi[i].y > canvas.height) wasabi[i].status = "dead";
+                wasabi[i].draw();
+                //弾と衝突
+                for (var j = 0; j < bullets.length; j++) {
+                    if (checkCollision(wasabi[i], bullets[j])) {
+                        score -= 500;
+                        wasabi[i].status = "dead";
+                        bullets[j].status = "dead";
+                        explosions[i].init(wasabi[i].x, wasabi[i].y, "alive");
+                        se("wasabi");
+                    }
+                }
+
+                //描画または画面上から復活
+                if (wasabi[i].status == "alive") {
+                    wasabi[i].draw();
+                } else {
+                    wasabi[i].init(Math.random() * canvas.width * 0.8, 0, "alive");
                 }
             }
 
@@ -323,7 +357,7 @@
                     touchY >= playerTop && touchY <= playerBottom) {
                     for (let i = 0; i < bullets.length; i++) {
                         if (bullets[i].status === "dead") {
-                            bullets[i].init(player.x + player.width / 2, player.y - 16, "alive"); // 中央から発射
+                            bullets[i].init(player.x, player.y - 16, "alive"); // 中央から発射
                             se("shoot"); // 発射音
                             break;
                         }
@@ -347,6 +381,9 @@
     </audio>
     <audio id="explosion">
         <source src="explosion.mp3">
+    </audio>
+    <audio id="wasabi">
+        <source src="wasabi.mp3">
     </audio>
 </body>
 <style>
