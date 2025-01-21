@@ -234,10 +234,10 @@
                 //弾と衝突
                 for (var j = 0; j < bullets.length; j++) {
                     if (checkCollision(wasabi[i], bullets[j])) {
-                        score -= 500;
                         wasabi[i].status = "dead";
                         bullets[j].status = "dead";
                         explosions[i].init(wasabi[i].x, wasabi[i].y, "alive");
+                        player.status = "dead";
                         se("wasabi");
                     }
                 }
