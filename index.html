@@ -354,12 +354,12 @@
                             bullets[i].init(player.x, player.y - 16, "alive"); // 中央から発射
                             se("shoot"); // 発射音
                             break;
-                        } else if (touchX < playerCenter) {
-                             playerDir = -1; // 左移動
-                        } else if (touchX > playerCenter) {
-                             playerDir = 1; // 右移動
-                        }
+                        } 
                     }
+                }else if (touchX < playerCenter) {
+                    playerDir = -1; // 左移動
+                } else if (touchX > playerCenter) {
+                    playerDir = 1; // 右移動
                 }
             });
 
