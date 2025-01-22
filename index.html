@@ -344,15 +344,11 @@
                 const playerRight = player.x + player.width;
                 const playerTop = player.y;
                 const playerBottom = player.y + player.height;
-
+                const playerCenter = player.x + player.width / 2;
                 // 自機の基準で左右移動
                  if (touchY > canvas.height * 0.75) { // 画面下部をタッチ
-                     const playerCenter = player.x + player.width / 2; // 自機の中心
-                     if (touchX < playerCenter) {
-                         playerDir = -1; // 左移動
-                     } else if (touchX > playerCenter) {
-                         playerDir = 1; // 右移動
-                     }
+                     
+                     
                  }
    
                 // 自機をタッチした場合に弾を発射
@@ -363,7 +359,10 @@
                             bullets[i].init(player.x, player.y - 16, "alive"); // 中央から発射
                             se("shoot"); // 発射音
                             break;
-                        }
+                        } else if (touchX < playerCenter) {
+                             playerDir = -1; // 左移動
+                         } else if (touchX > playerCenter) {
+                             playerDir = 1; // 右移動
                     }
                 }
             });
